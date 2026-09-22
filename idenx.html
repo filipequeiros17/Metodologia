@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Cartas com Rank e Dificuldade</title>
+    <style>
+    /* animação */
+    @keyframes flutuar {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(20px); }
+    }
+
+    /* fonte */
+    @font-face {
+        font-family: 'bold';
+        src: url('BoldPixels.otf') format('opentype');
+    }
+
+    /* --- ESTILOS GERAIS --- */
+    * { font-family: 'bold', Arial, sans-serif; }
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #1e1e1e;
+        color: #f0f0f0;
+        background-position: center center;
+        background-size: cover;
+        background-repeat: no-repeat;
+    }
+    .container {
+        background-color: #333;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        width: 90%;
+        max-width: 650px;
+        text-align: center;
+        position: relative; 
+        animation: flutuar 3s ease-in-out infinite alternate;
+    }
+    h1, h2 {
+        color: #4CAF50;
+    }
+    .t1 { 
+        font-size: 28px;
+        background-color: #555;
+        color: #4CAF50;
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 8px 0;
+        border-radius: 6px;
+    }
+    p { font-size: 18px; }
+    button {
+        padding: 10px 20px;
+        margin: 8px;
+        font-size: 15px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+    input[type="text"] {
+        padding: 10px;
+        margin: 10px 0;
+        width: 80%;
+        border-radius: 5px;
+        border: 1px solid #555;
+        background-color: #444;
+        color: white;
+        box-sizing: border-box;
+    }
+
+    /* --- ESTILOS ESPECÍFICOS DO JOGO --- */
+    #login-screen button {
+        background-color: #2196F3;
+        color: white;
+    }
+    #login-screen button:hover {
+        background-color: #0b7dda;
+    }
+
+    .score-board {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 20px;
+        font-size: 1.1em;
+        padding: 10px;
+        background-color: #444;
+        border-radius: 8px;
+    }
+    .card-slot {
+        display: flex; 
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    .card {
+        width: 110px;
+        height: 150px;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 1em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s, opacity 0.3s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        border: 3px solid #f0f0f0;
+    }
+    .card:hover {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+
+    /* Cores puras das cartas por dificuldade (Sem imagens) */
+    .easy { 
+        background-color: #27ae60; /* Verde */
+        color: #ffffff;
+    }
+    .medium { 
+        background-color: #f1c40f; /* Amarelo */
+        color: #1e1e1e;
+    }
+    .hard { 
+        background-color: #e74c3c; /* Vermelho */
+        color: #ffffff;
+    }
+
+    .answer-button {
+        background-color: #555;
+        color: white;
+        width: 100%;
+        margin: 6px 0;
+        text-align: left;
+        line-height: 1.3;
+        padding: 12px;
+    }
+    .answer-button:hover:not(:disabled) {
+        background-color: #777;
+    }
+    .correct-answer {
+        background-color: #27ae60 !important;
+        color: white !important;
+    }
+    .wrong-answer {
+        background-color: #e74c3c !important;
+        color: white !important;
+    }
+    
+    /* --- ESTILOS DO RANK --- */
+    #rank-container {
+        margin-top: 20px;
+    }
+    #rank-list {
+        list-style: none;
+        padding: 0;
+    }
+    #rank-list li {
+        background-color: #444;
+        padding: 10px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+    }
+    #rank-list li:first-child {
+        background-color: gold;
+        color: black;
+        font-weight: bold;
+    }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen">
+        <h1>Entrar no Jogo</h1>
+        <p>Digite o nome dos dois jogadores para começar.</p>
+        <input type="text" id="player1-name" placeholder="Nome do Jogador 1"><br>
+        <input type="text" id="player2-name" placeholder="Nome do Jogador 2"><br>
+        <button onclick="startGame()">Iniciar Jogo</button>
+    </div>
+
+    <!-- TELA DE JOGO -->
+    <div id="game-screen" style="display:none;">
+        <h1 class="t1">Biblioteca Pública Denise Tavares</h1>
+        
+        <div class="score-board">
+            <span id="player1-score"></span>
+            <span id="current-turn"></span>
+            <span id="player2-score"></span>
+        </div>
+
+        <p id="game-info">Rodada: <span id="round-count">1</span> / 8</p>
+        <p id="game-message">Escolha uma carta, Jogador(a)!</p>
+        
+        <div id="cards-container" class="card-slot"></div>
+
+        <div id="question-container" style="display:none;">
+            <h2 id="question-text" style="font-size: 1.1em; text-align: justify; line-height: 1.4;"></h2>
+            <div id="answers-container"></div>
+            <p id="answer-feedback"></p>
+            <button onclick="nextTurn()" id="next-turn-button" style="display:none; background-color: #2196F3; color: white;">Próxima Rodada</button>
+        </div>
+
+        <button onclick="endGame()" style="margin-top: 20px; background-color: #777; color: white;">Finalizar Jogo e Ver Rank</button>
+    </div>
+
+    <!-- TELA DE RANK -->
+    <div id="rank-screen" style="display:none;">
+        <h1>🏆 Rank de Pontuação</h1>
+        <div id="rank-container">
+            <ul id="rank-list"></ul>
+        </div>
+        <button onclick="showLogin()" style="background-color: #4CAF50; color: white;">Novo Jogo</button>
+    </div>
+
+</div>
+
+<script>
+    const MAX_ROUNDS = 8; 
+    let players = { p1: { name: '', score: 0 }, p2: { name: '', score: 0 } };
+    let isPlayer1Turn = true;
+    let currentRound = 1;
+    let questionsUsedIndices = []; 
+
+    const ALL_QUESTIONS = [
+        // Dificuldade Fácil (1 Ponto) - Cor: Verde
+        { 
+            question: "1. De acordo com a sua definição etimológica, a palavra 'metodologia' deriva de meta (além/caminho) e hodos (via). Qual é a principal função da metodologia na investigação científica?", 
+            answers: [
+                "A) Garantir que a pesquisa seja guiada pelo senso comum e pela intuição individual.", 
+                "B) Servir como um formulário burocrático obrigatório sem relação com a prática.", 
+                "C) Oferecer a rota que dá coerência ao percurso investigativo, impedindo o 'achismo'.", 
+                "D) Substituir a teoria pelo acúmulo de dados operacionais sem reflexão."
+            ], 
+            correct: [2], 
+            difficulty: 'easy', 
+            points: 1 
+        },
+        { 
+            question: "2. Maria Cecília de Souza Minayo (2001) aponta quatro elementos que funcionam de forma integrada na estrutura metodológica. Quais são esses quatro elementos?", 
+            answers: [
+                "A) Hipóteses, Variáveis, Métricas e Formulários.", 
+                "B) Conceitos/Teoria, Hipóteses, Métodos e Técnicas.", 
+                "C) Intuição, Senso Comum, Métodos e Experimentos.", 
+                "D) Bibliometria, Cientometria, Informetria e Altmetria."
+            ], 
+            correct: [1], 
+            difficulty: 'easy', 
+            points: 1 
+        },
+        { 
+            question: "3. Na Biblioteconomia e Ciência da Informação, qual métrica quantitativa é definida como a 'análise de livros, artigos e citações para mapear a produção científica de uma área (Leis de Bradford, Lotka e Zipf)'?", 
+            answers: [
+                "A) Altmetria.", 
+                "B) Análise de Conteúdo.", 
+                "C) Bibliometria.", 
+                "D) Teste de Usabilidade (UX)."
+            ], 
+            correct: [2], 
+            difficulty: 'easy', 
+            points: 1 
+        },
+
+        // Dificuldade Média (3 Pontos) - Cor: Amarela
+        { 
+            question: "4. A principal função da metodologia é articular a teoria e a técnica para garantir que a técnica não seja aplicada no 'vazio'. O que ocorre quando há ausência de uma fundamentação teórica sólida na pesquisa?", 
+            answers: [
+                "A) A pesquisa atinge o status de verdade universal sem necessidade de dados empíricos.", 
+                "B) A coleta de dados torna-se um mero acúmulo de informações sem sentido.", 
+                "C) A teoria passa a ser classificada como uma simulação de Monte Carlo.", 
+                "D) O estudo adquire automaticamente replicabilidade e transparência."
+            ], 
+            correct: [1], 
+            difficulty: 'medium', 
+            points: 3 
+        },
+        { 
+            question: "5. No estudo das apostas e do sistema de risco matemático apresentado na fundamentação, qual combinação de métodos e técnicas é caracterizada como de abordagem QUANTITATIVA?", 
+            answers: [
+                "A) Estudo Observacional (UX) e Análise de Conteúdo de Bardin em grupos do Telegram.", 
+                "B) Análise do discurso de influenciadores e mapeamento de elementos visuais de plataformas.", 
+                "C) Design Experimental com Simulação de Monte Carlo e Análise Estatístico-Inferencial.", 
+                "D) Entrevistas em profundidade com apostadores e aplicação de testes qualitativos."
+            ], 
+            correct: [2], 
+            difficulty: 'medium', 
+            points: 3 
+        },
+        { 
+            question: "6. De que maneira a metodologia científica contribui para a 'Minimização do Viés do Pesquisador'?", 
+            answers: [
+                "A) Impondo controles como testes duplo-cego, amostragem aleatória e análise estatística para neutralizar a subjetividade do investigador.", 
+                "B) Garantindo que as preferências e expectativas do cientista prevaleçam sobre os dados empíricos.", 
+                "C) Eliminando a necessidade de testes empíricos, confiando na intuição e na experiência prévia do cientista.", 
+                "D) Substituindo a lógica formal por convicções pessoais e tradições cotidianas."
+            ], 
+            correct: [0], 
+            difficulty: 'medium', 
+            points: 3 
+        },
+
+        // Dificuldade Difícil (5 Pontos) - Cor: Vermelha
+        { 
+            question: "7. Ao discutir a aplicação de metodologias na Biblioteconomia, Valentim et al. (2008) são citados para fundamentar a complexidade do campo. Por que a pesquisa em Ciência da Informação e Biblioteconomia exige o emprego de métodos científicos rígidos e diversos?", 
+            answers: [
+                "A) Porque a Biblioteconomia se limita ao estudo quantitativo de acervos impressos, dispensando abordagens sociais.", 
+                "B) Porque lida com o ciclo completo da informação e com a complexidade dos fluxos, suportes e atores envolvidos no ciclo documental.", 
+                "C) Porque visa substituir os modelos teóricos de comportamento informacional por métricas puramente matemáticas.", 
+                "D) Porque a gestão de unidades de informação baseia-se exclusivamente em decisões intuitivas e no senso comum dos bibliotecários."
+            ], 
+            correct: [1], 
+            difficulty: 'hard', 
+            points: 5 
+        },
+        { 
+            question: "8. Considere a relação entre Técnica e Finalidade: (1) Bibliometria, (2) Estudo de Caso, (3) Testes de Usabilidade, (4) Análise de Conteúdo.<br><br>( ) Categorizar as reclamações e sugestões na ouvidoria.<br>( ) Mapear a produção acadêmica de uma universidade nos últimos 5 anos.<br>( ) Avaliar a facilidade de navegação no repositório institucional.<br>( ) Analisar o processo de digitalização do acervo histórico.<br><br>Assinale a sequência correta:", 
+            answers: [
+                "A) 4 – 1 – 3 – 2", 
+                "B) 1 – 4 – 2 – 3", 
+                "C) 3 – 2 – 1 – 4", 
+                "D) 4 – 3 – 2 – 1"
+            ], 
+            correct: [0], 
+            difficulty: 'hard', 
+            points: 5 
+        },
+        { 
+            question: "9. Analise a afirmativa: 'É a articulação teórica que dá sentido ao dado: a técnica extrai o padrão de compartilhamento, mas a teoria explica a causa do fenômeno.' Qual exemplo ilustra essa superação do 'achismo empírico'?", 
+            answers: [
+                "A) A demonstração matemática de que apostadores sempre ganham em plataformas de odds fixas.", 
+                "B) A explicação de que as pessoas compartilham fake news simplesmente 'porque querem', comprovada por dados numéricos.", 
+                "C) A explicação teórica sobre como o comportamento humano e a arquitetura das plataformas geram a bolha informacional no estudo sobre desinformação.", 
+                "D) A comprovação de que o conhecimento cotidiano é suficiente para validar as vacinas de mRNA sem a necessidade de replicabilidade."
+            ], 
+            correct: [2], 
+            difficulty: 'hard', 
+            points: 5 
+        }
+    ];
+
+    function showScreen(screenId) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('rank-screen').style.display = 'none';
+        document.getElementById(screenId).style.display = 'block';
+    }
+
+    function showLogin() {
+        document.getElementById('player1-name').value = '';
+        document.getElementById('player2-name').value = '';
+        showScreen('login-screen');
+    }
+
+    function startGame() {
+        const p1Name = document.getElementById('player1-name').value.trim();
+        const p2Name = document.getElementById('player2-name').value.trim();
+
+        if (p1Name === "" || p2Name === "") {
+            alert("Por favor, digite o nome de ambos os jogadores.");
+            return;
+        }
+
+        players.p1 = { name: p1Name, score: 0 };
+        players.p2 = { name: p2Name, score: 0 };
+        isPlayer1Turn = true;
+        currentRound = 1; 
+        questionsUsedIndices = [];
+
+        updateScoreBoard();
+        createCards();
+        showScreen('game-screen');
+    }
+
+    function updateScoreBoard() {
+        document.getElementById('player1-score').textContent = `${players.p1.name}: ${players.p1.score} pts`;
+        document.getElementById('player2-score').textContent = `${players.p2.name}: ${players.p2.score} pts`;
+        
+        const currentPlayer = getCurrentPlayer().name;
+        document.getElementById('current-turn').textContent = `Vez de: ${currentPlayer}`;
+        document.getElementById('game-message').textContent = `Escolha uma carta, ${currentPlayer}!`;
+        document.getElementById('round-count').textContent = currentRound;
+    }
+
+    function getCurrentPlayer() {
+        return isPlayer1Turn ? players.p1 : players.p2;
+    }
+
+    function createCards() {
+        const container = document.getElementById("cards-container");
+        container.innerHTML = '';
+        
+        document.getElementById('question-container').style.display = 'none';
+        document.getElementById("cards-container").style.display = 'flex'; 
+        document.getElementById('game-message').style.display = 'block';
+
+        ALL_QUESTIONS.forEach((question, i) => {
+            if (questionsUsedIndices.includes(i)) return; 
+
+            const card = document.createElement("div");
+            card.classList.add("card", question.difficulty); 
+            card.innerHTML = `<span style="font-size: 0.8em;">${question.difficulty.toUpperCase()}</span><br>+${question.points} Pts`;
+            
+            card.onclick = function() {
+                showQuestion(i);
+            };
+
+            container.appendChild(card);
+        });
+    }
+
+    function showQuestion(questionIndex) {
+        const questionData = ALL_QUESTIONS[questionIndex];
+        
+        document.getElementById("cards-container").style.display = 'none';
+        document.getElementById('game-message').style.display = 'none';
+        document.getElementById("question-container").style.display = 'block';
+        document.getElementById("next-turn-button").style.display = 'none';
+        document.getElementById("answer-feedback").textContent = '';
+
+        document.getElementById("question-text").innerHTML = questionData.question;
+        const answersContainer = document.getElementById("answers-container");
+        answersContainer.innerHTML = ''; 
+
+        questionData.answers.forEach((answer, index) => {
+            const button = document.createElement("button");
+            button.classList.add("answer-button");
+            button.textContent = answer;
+            
+            button.onclick = function() {
+                checkAnswer(questionIndex, index, button);
+            };
+            answersContainer.appendChild(button);
+        });
+
+        questionsUsedIndices.push(questionIndex);
+    }
+
+    function checkAnswer(questionIndex, selectedIndex, button) {
+        const questionData = ALL_QUESTIONS[questionIndex];
+        const isCorrect = questionData.correct.includes(selectedIndex);
+        const answerButtons = document.querySelectorAll(".answer-button");
+        const feedback = document.getElementById("answer-feedback");
+
+        answerButtons.forEach(btn => btn.disabled = true);
+
+        if (isCorrect) {
+            button.classList.add("correct-answer");
+            getCurrentPlayer().score += questionData.points;
+            feedback.textContent = `✅ Resposta correta! +${questionData.points} pontos.`;
+        } else {
+            button.classList.add("wrong-answer");
+            feedback.textContent = `❌ Resposta incorreta.`;
+        }
+
+        answerButtons.forEach((btn, index) => {
+            if (questionData.correct.includes(index) && !btn.classList.contains("correct-answer")) {
+                btn.classList.add("correct-answer");
+            }
+        });
+        
+        updateScoreBoard();
+        document.getElementById("next-turn-button").style.display = 'inline-block';
+    }
+
+    function nextTurn() {
+        if (currentRound >= MAX_ROUNDS) {
+            endGame();
+            return;
+        }
+
+        currentRound++;
+        isPlayer1Turn = !isPlayer1Turn;
+        
+        updateScoreBoard();
+        createCards();
+    }
+    
+    function endGame() {
+        saveScoreToRank(players.p1.name, players.p1.score);
+        saveScoreToRank(players.p2.name, players.p2.score);
+        showRank();
+    }
+
+    function getRank() {
+        return JSON.parse(localStorage.getItem('gameRank')) || [];
+    }
+
+    function saveScoreToRank(name, score) {
+        let rank = getRank();
+        const existingEntry = rank.find(p => p.name === name);
+        
+        if (existingEntry) {
+            if (score > existingEntry.score) {
+                existingEntry.score = score;
+            }
+        } else {
+            rank.push({ name, score });
+        }
+        
+        rank.sort((a, b) => b.score - a.score);
+        localStorage.setItem('gameRank', JSON.stringify(rank));
+    }
+
+    function showRank() {
+        const rankList = document.getElementById('rank-list');
+        rankList.innerHTML = '';
+        const rank = getRank();
+
+        if (rank.length === 0) {
+            rankList.innerHTML = '<li>Nenhuma pontuação registrada ainda.</li>';
+        } else {
+            rank.forEach((entry, index) => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `<span>${index + 1}º - ${entry.name}</span> <span>${entry.score} pts</span>`;
+                rankList.appendChild(listItem);
+            });
+        }
+
+        showScreen('rank-screen');
+    }
+
+    window.onload = function() {
+        showLogin();
+    };
+</script>
+
+</body>
+</html>
